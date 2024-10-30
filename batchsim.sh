@@ -9,8 +9,8 @@ do
 	for dir in */
 	do
 		cd $dir
-		nvcc RotTransSimulation_addCorrExch_FixShortExchTime_Sept2024.cu -o RotTransSim.exe
-		./RotTransSim.exe
+		nvcc RotationTranslationSimulation.cu -o RotationTranslationSim.exe
+		./RotationTranslationSim.exe
 		cd ..
 	done
 
@@ -18,4 +18,4 @@ do
 
 done
 
-echo "DID IT!"
+echo "Simulations Complete!"
