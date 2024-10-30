@@ -65,7 +65,8 @@ The user is able to modify the following parameters by editting their values fro
   nvcc RotationTranslationSimulation.cu -o RotationTranslationSim.exe
   ./RotationTranslationSim.exe
 ```
-  Once complete, the output frame files can be converted to *.tif* files by executing the included 
+
+  Once complete, the output frame files will be contained in two folders titled *lc_frames* and *rc_frames* which can be converted to *.tif* files by running the included *SimOut_to_Tif.py* code included in this repository. This may require the user to modify the first snippet of code whereby the path of the *lc_frames* or *rc_frames* folders is specified.
 
   ### Multiple Simulations with Shell Scripts
     
@@ -92,8 +93,18 @@ The user is able to modify the following parameters by editting their values fro
  
 All the output frame files can then be converted to *.tif* files with the following command once again executed from the working directory *./*:
 
-```bash bash_convert_to_tif.sh```
+```bash batchConvertToTif.sh```
 
+***NOTE:*** The path of *SimOut_to_Tif.py* in this bash script will need to be modified to reflect the location of this Python code in your file directory. 
+
+# License
+No Current License
+
+# Referencing
+No Current Reference
+
+# Contact
+No Current Contact
 
 
 
