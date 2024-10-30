@@ -98,10 +98,15 @@ All the output frame files can then be converted to *.tif* files with the follow
 ***NOTE:*** The path of *SimOut_to_Tif.py* in this bash script will need to be modified to reflect the location of this Python code in your file directory. 
 
 # License
-No Current License
+SingleMoleculeRotationTranslationSimulation is licensed with an MIT license. See LICENSE file for more information.
 
 # Referencing
-No Current Reference
+If you use SingleMoleculeRotationTranslationSimulation for your work, cite it with the following:
+```
+Alec R. Meacham, Jaladhar Mahato, Han Yang, and Laura J. Kaufman
+The Journal of Physical Chemistry B 2024 128 (38), 9233-9243
+DOI: 10.1021/acs.jpcb.4c02097
+```
 
 # Contact
 No Current Contact
