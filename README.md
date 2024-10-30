@@ -70,7 +70,7 @@ The user is able to modify the following parameters by editting their values fro
 
   ### Multiple Simulations with Shell Scripts
     
-  This code can also be run using the shell scripts included in this repository if you have many simulations to run. This will execute all simulations in series. 
+  More often than not the user will likely be interested in running a number of simulations with potentially varying parameters. As such, this code can also be run using the shell scripts included in this repository if you have many simulations to run. This will execute all simulations in series; to execute in parallel simply run this same process in a different working directory from another instance of the Bash terminal.
   <br/>
   <br/>
   In this case place each *RotationTranslationSimulation.cu* file (with its parameters adjusted to your preference) in its own folder and nest these folders within another folder. As such your file directory should look something like:
