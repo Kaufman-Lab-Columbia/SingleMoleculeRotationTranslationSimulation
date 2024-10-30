@@ -1,5 +1,5 @@
 # SingleMoleculeRotationTranslationSimulation
-This code simulates simultaneous rotational and translational motion of single molecule fluorescent probes via random walks to approximate the heterogeneous dynamics exhibited by supercooled liquid systems. The simulations output as .tif files of two orthogonally polarized optical channels. These simulations are written to utilize GPU acceleration on CUDA cores but the computations could be adapted to run just on the CPU. 
+This code simulates simultaneous rotational and translational motion of single molecule fluorescent probes via random walks to approximate the heterogeneous dynamics exhibited by supercooled liquid systems. The simulations output as .tif files of two orthogonally polarized optical channels. These simulations are written to utilize GPU acceleration on CUDA cores but the computations could be adapted to run just on the CPU as C code.  
 
 # Getting Started
 ## Dependencies
