@@ -39,22 +39,22 @@ The user is able to modify the following parameters by editting their values fro
    - ***exch_type*** (int): Indicates the type of exchange you want to simulate. (1) Uniform Dynamic Exchange (2) Correlated Exchange following http://dx.doi.org/10.1063/1.4915267 <br/> <br/>
 
 - Translation Specific:
-  - ***D_med*** (float):
-  - ***D_fwhm*** (float):
-  - ***D_corr*** (float):
+  - ***D_med*** (float): Median value of the sampled log_10(Dmsd) distribution.
+  - ***D_fwhm*** (float): FWHM of the log_10(Dmsd) distribution.
+  - ***D_corr*** (float): Correlation of Dmsd to the previous timescale (i.e.; fast molecules are more likely to remain fast and slow molecules are more likely to remain slow). ***THIS IS NOT CURRENTLY IMPLEMENTED***
 
-  - ***Dxch_med*** (float):
-  - ***Dxch_fwhm*** (float):
-  - ***Dxch_corr***(float):
+  - ***Dxch_med*** (float): If *exch_type = 1*: this is the medium number of frames before exchanging to a new Dmsd. If *exch_type = 2*: ***THIS IS NOT CURRENTLY IMPLEMENTED***
+  - ***Dxch_fwhm*** (float): FWHM of the log_10(D_exchange) distribution ***THIS IS NOT CURRENTLY IMPLEMENTED***
+  - ***Dxch_corr***(float): Correlation of exchange time with Dmsd (i.e.; fast molecules exchange timescales frequently and slow molecules exchange timescales less frequently) ***THIS IS NOT CURRENTLY IMPLEMENTED***
 
 - Rotation Specific:
-  - ***tau_med*** (float):
-  - ***tau_fwhm*** (float):
-  - ***tau_corr*** (float):
+  - ***tau_med*** (float): Median value of the sampled log_10(tauc) distribution.
+  - ***tau_fwhm*** (float): FWHM of the log_10(tauc) distribution.
+  - ***tau_corr*** (float): Correlation of tau to previous timescales (i.e.; fast molecules are more likely to remain fast and slow molecules are more likely to remain slow). ***THIS IS NOT CURRENTLY IMPLEMENTED***
 
-  - ***xch_med*** (float):
-  - ***xch_fwhm*** (float):
-  - ***xch_corr*** (float):
+  - ***xch_med*** (float): If *exch_type = 1*: This is the medium number of frames before exchanging to a new tauc. If *exch_type = 2*: This is the medium of the distribution upon which exchange times will be sampled.
+  - ***xch_fwhm*** (float): FWHM of the log_10(tau_exchange) distribution.
+  - ***xch_corr*** (float): Correlation of exchange time with tauc (i.e.; fast molecules exchange timescales frequently and slow molecules exchange timescales less frequently)
 <br/>
  
 ## Running the Simualations
