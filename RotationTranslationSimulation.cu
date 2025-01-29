@@ -59,7 +59,7 @@ Define Simulation Parameters
 #define     D_fwhm                  0.0     // FWHM of log_10(Dmsd) distribution
 #define     D_corr                  0.0     // correlation
 
-#define     Dxch_med                100000  // median number of frames before D_exchange
+#define     Dxch_med                100000.0// median number of frames before D_exchange
 #define     Dxch_fwhm               0.0     // FWHM of log_10(D_exchange) distribution
 #define     Dxch_corr               0.0     // correlation
 
@@ -424,7 +424,7 @@ __global__ void reset_channels(float* lc, float* rc) {
     lc[index] = 0.0f;
     rc[index] = 0.0f;
 
-    return
+    return;
 
 }
 
