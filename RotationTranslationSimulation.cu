@@ -1,10 +1,18 @@
-///////////////////////////////////////////
-////
-//// Simultaneous Rotation And Translation simulation that outputs a .tif with random coordinates (Or grid, Not yet implemented) And a Gaussian PSF
-//// Features both rotate And translate with user specified median timescales sampled on a gaussian distribution with optional dynamic exchange implementation
-//// This version runs on Nvidia GPUs using CUDA for decreased calcluation time
-////
-//////////////////////////////////////////
+/*
+
+ Simultaneous Rotation and Translation simulation that outputs a .tif with random molecule coordinates (or on a grid) and a Gaussian PSF. 
+
+ Features both rotate and translate with user specified median timescales sampled on a Gaussian distribution with optional dynamic exchange and correlated exchange implementation. 
+ 
+ This version runs on Nvidia GPUs using CUDA for decreased calcluation time. 
+
+*/
+
+/*
+
+Includes
+
+*/
 
 #include <math.h>
 #include <stdio.h>
@@ -17,6 +25,12 @@
 #include <curand_kernel.h>
 #include <cuda_fp16.h>
 
+/* 
+
+Define Simulation Parameters
+
+*/
+
 #define     HEIGHT  300                     // Height of output.txt
 #define     WIDTH   300                     // Width of output.txt
 #define     C       2.35482005              // FWHM with unit stdev
@@ -27,7 +41,7 @@
 #define     feats                   10      // If using Random Initial Positions: Number of molecules to simulation
 #define     separation              15      // If using Grid Initial Positions: How far apart (pixels) must molecules be on the grid
 
-#define     frames                  10   // Number of frames to simulate
+#define     frames                  10      // Number of frames to simulate
 #define     pixel_size              166     // Pixel Size (nm)
 #define     tbf                     0.5     // Time between frames (s)
 #define     aperture_detect         0.95    // NA of objective lens
@@ -53,7 +67,7 @@
 #define     tau_fwhm                2.0     // FWHM of log_10(tauc) distribution
 #define     tau_corr                0.0     // Correlation of tau to previous timescales (rho_r in Kevin's paper; fast remains fast and slow remains slow)
 
-#define     xch_med                 0.00    // Exchange Method:  (1) median number of frames before tau_exchange (2) median log tau_ex
+#define     xch_med                 0.00    // Depending on Exchange Method:  (if 1) this is the median number of frames before tau_exchange (if 2) this is the median log tau_ex
 #define     xch_fwhm                0.0     // FWHM of log_10(exchange) distribution
 #define     xch_corr                0.0     // Correlation of exchange time to tau (rho_x in Kevin's paper; fast exchanges fast and slow exchanges slow)
 
@@ -62,6 +76,16 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 void save_params(float seed) {
+
+    /*
+    Save all simulation parameters to a .txt file for future reference
+
+    Args: 
+        seed (int): Seed used for random number generation
+
+    Returns: 
+        None
+    */
 
     FILE* param_file;
     char    param_name[80];
@@ -129,6 +153,48 @@ void save_outputs(int frame,
     FILE* lc_file, FILE* rc_file, FILE* D_file, FILE* coord_file, FILE* steps_file, FILE* tau_file, FILE* ang_file, FILE* angsteps_file, FILE* totangstep_file, 
     char* lcname, char* rcname, char* Dname, char* coordname, char* stepsname, char* tauname, char* angname, char* angstepsname, char* totangstepname, 
     float* lc, float* rc, float* Darr, float* pos, float* steps, float* tauarr, float* ang, float* angsteps, float* totangstep, int numFeats) {
+
+    /*
+    Save all outputs. This includes LC and RC frame data, tau files, D_t files, angle and angle steps files, and coordinate and coordinate step files
+
+    Args: 
+        frame (int): Frame of the movie that we are saving data frame
+        
+        lc_file (FILE*): Pointer to the FILE object of the left-channel of the movie, used for reading from or writing to a file
+        rc_file (FILE*): Pointer to the FILE object of the right-channel of the movie, used for reading from or writing to a file
+        D_file (FILE*): Pointer to the FILE object of the translational diffusion coefficients of each simulated molecule, used for reading from or writing to a file
+        coord_file (FILE*): Pointer to the FILE object of the coordinates of each simulated molecule, used for reading from or writing to a file
+        steps_file (FILE*): Pointer to the FILE object of the xy-steps of each simulated molecule, used for reading from or writing to a file
+        tau_file (FILE*): Pointer to the FILE object of the rotational correlation time tau of each simulated molecule, used for reading from or writing to a file
+        ang_file (FILE*): Pointer to the FILE object of the azimuthal and polar angular orientation of each simulated molecule, used for reading from or writing to a file
+        angsteps_file (FILE*): Pointer to the FILE object of the azimuthal and polar angular jumps of each simulated molecule, used for reading from or writing to a file
+        totangstep_file (FILE*): COMPUTATION IS NOT IMPLEMENTED, Pointer to the FILE object of the total angular displacement, used for reading from or writing to a file
+
+        lcname (char*): Pointer to a null-terminated string of the file name for the left-channel
+        rcname (char*): Pointer to a null-terminated string of the file name for the right-channel
+        Dname (char*): Pointer to a null-terminated string of the file name for the diffusion coefficients
+        coordname (char*): Pointer to a null-terminated string of the file name for the coordinates
+        stepsname (char*): Pointer to a null-terminated string of the file name for the xy-steps
+        tauname (char*): Pointer to a null-terminated string of the file name for the tau values
+        angname (char*): Pointer to a null-terminated string of the file name for the angular orientations
+        angstepsname (char*): Pointer to a null-terminated string of the file name for the angular steps
+        totangstepname (char*): COMPUTATION IS NOT IMPLEMENTED, Pointer to a null-terminated string of the file name for the total angular displacement
+
+        lc (float*): Pointer to an array of floats, for storing per-pixel data for the left-channel
+        rc (float*): Pointer to an array of floats, for storing per-pixel data for the right-channel
+        Darr (float*): Pointer to an array of floats, for storing the diffusion coefficients of each simulated molecule
+        pos (float*): Pointer to an array of floats, for storing the coordinates of each simulated molecule
+        steps (float*): Pointer to an array of floats, for storing the xy-step of each simulated molecule
+        tauarr (float*): Pointer to an array of floats, for storing the tau of each simulated molecule
+        ang (float*): Pointer to an array of floats, for storing the angular orientation of each simulated molecule
+        angsteps (float*): Pointer to an array of floats, for storing the angular stepsizes of each simulated molecule
+        totangstep (float*): COMPUTATION IS NOT IMPLEMENTED Pointer to an array of floats, for storing the total angular displacement of each simulated molecule
+        
+        numFeats (int): Number of simulated molecules
+
+    Returns:
+        None
+    */
 
     // Save LC and RC frames
 
@@ -266,10 +332,15 @@ void save_outputs(int frame,
 
 float sample_gaussian() {
 
-    /////////////////////////////////////////////////////////////////////////////////
-    ///// This function returns a random value sampled from a Gaussian distribution
-    ///// with zero mean and unit variance
-    /////////////////////////////////////////////////////////////////////////////////
+    /*
+     Returns a random value sampled from a Gaussian distribution with zero mean and unit variance
+
+     Args: 
+        None
+
+    Returns: 
+        value[index] (float): Random value sampled from a Gaussian distribution
+    */
 
     static int	index;
     static float	value[2];
@@ -296,6 +367,18 @@ float sample_gaussian() {
 
 void local_boxmuller_transform(float A, float B, float* bm_return) {
 
+    /*
+    Computes the Box-Muller Transform random number sampling method. Called from host (CPU)
+    
+    Args: 
+        A (float): An independent value chosen from a uniform distribution on (0, 1)
+        B (float): An independent value chosen from a uniform distribution on (0, 1)
+        bm_return (float*): Pointer to an array of floats, each value is an independent random variable with a standard normal distribution
+      
+    Returns: 
+        None
+     */
+
     bm_return[0] = sqrt(-2 * log(A)) * cos(2 * PI * B);
     bm_return[1] = sqrt(-2 * log(A)) * sin(2 * PI * B);
 
@@ -305,10 +388,19 @@ void local_boxmuller_transform(float A, float B, float* bm_return) {
 
 float local_vector_Magnitude(float* vect) {
 
+    /*
+    Computes the magnitude of a vector on the CPU. Used for ensuring vectors are normalized
+
+    Args: 
+        vect (float*): Pointer to an array of floats, representing the vector to be normalized
+     
+     Returns:
+        mag (float): Magnitude of the vector
+     */
+
     float mag;
 
     mag = pow(vect[0], 2) + pow(vect[1], 2) + pow(vect[2], 2);
-
 
     return mag;
 
@@ -316,18 +408,38 @@ float local_vector_Magnitude(float* vect) {
 
 __global__ void reset_channels(float* lc, float* rc) {
 
+    /*
+    Resets the intensity of all pixels in a given channel to 0.0 for computation of the next frame. Called from the host (CPU)
+    
+    Args:
+        lc (float*): Pointer to an array of floats, for storing per-pixel data for the left-channel
+        rc (float*): Pointer to an array of floats, for storing per-pixel data for the right-channel
+
+    Returns: 
+        None
+    */
+
     int index = threadIdx.x + blockIdx.x * blockDim.x;
 
     lc[index] = 0.0f;
     rc[index] = 0.0f;
 
+    return
+
 }
 
 __device__ float gaussian1D(float var, double mean) {
 
-    /////////////////////////////////////////////////////////////////////////////////
-    ///// This function generates a Gaussian PSF to apply for to a feature relative to the feature center
-    /////////////////////////////////////////////////////////////////////////////////
+    /*
+    Generates a 1D Gaussian PSF to apply for to a feature relative to the feature center. Called from the device (GPU)
+
+    Args: 
+        var (float): x-variable in Gaussian equation
+        mean (double): Expected value (mean) of Gaussian
+
+    Return
+        float: Computation of Gaussian PSF given the feature
+    */
 
     float sigma = PSF_fwhm / C / pixel_size;
 
@@ -336,6 +448,21 @@ __device__ float gaussian1D(float var, double mean) {
 }
 
 __device__ double pixelPSF(double x_lLim, double x_uLim, double x_mean, double y_lLim, double y_uLim, double y_mean) {
+
+    /*
+    Computes the relative intensity value of a given pixel from the expected Gaussian PSF using Trapezoidal Riemann's Sums. Called from the device (GPU)
+
+    Args: 
+        x_lLim (double): Lower Limit of integration for x
+        x_uLim (double): Upper Limit of integration for x
+        x_mean (double): Center of Gaussian for x (i.e.; center of the PSF in the x-dimension)
+        y_lLim (double): Lower Limit of integration for y
+        y_uLim (double): Upper Limit of integration for y
+        y_mean (double): Center of Gaussian for y (i.e.; center of the PSF in the y-dimension)
+
+    Returns: 
+        double: Product of the x-integration approximation and the y-integration approximation to yield the relative intensity of the pixel
+    */
 
     //double l_lim = -10.0, u_lim = 10.0; // l_lim: lower limit, u_lim: upper limit of integration
     int n = 100; // number of intervals
@@ -357,9 +484,18 @@ __device__ double pixelPSF(double x_lLim, double x_uLim, double x_mean, double y
 
 __global__ void apply_PSF(float* lc, float* rc, float* pos, float* ang) {
 
-    /////////////////////////////////////////////////////////////////////////////////
-    ///// This function applies a PSF with specified FWHM to each feature in the output movie frame
-    /////////////////////////////////////////////////////////////////////////////////
+    /*
+    Applies a PSF with specified FWHM to each feature in the output movie frame. Called from host (CPU)
+
+    Args: 
+        lc (float*): Pointer to an array of floats, for storing per-pixel data for the left-channel
+        rc (float*): Pointer to an array of floats, for storing per-pixel data for the right-channel
+        pos (float*): Pointer to an array of floats, for storing the coordinates of each simulated molecule
+        ang (float*): Pointer to an array of floats, for storing the angular orientation of each simulated molecule
+
+    Returns: 
+        None
+    */
 
     int index = threadIdx.x;
 
@@ -442,6 +578,18 @@ __global__ void apply_PSF(float* lc, float* rc, float* pos, float* ang) {
 
 __device__ void boxmuller_transform(float A, float B, float *bm_return) {
 
+    /*
+    Computes the Box-Muller Transform random number sampling method. Called from device (GPU)
+
+    Args:
+        A (float): An independent value chosen from a uniform distribution on (0, 1)
+        B (float): An independent value chosen from a uniform distribution on (0, 1)
+        bm_return (float*): Pointer to an array of floats, each value is an independent random variable with a standard normal distribution
+
+    Returns:
+        None
+     */
+
     bm_return[0] = sqrt(-2 * log(A)) * cos(2 * PI * B);
     bm_return[1] = sqrt(-2 * log(A)) * sin(2 * PI * B);
 
@@ -449,6 +597,18 @@ __device__ void boxmuller_transform(float A, float B, float *bm_return) {
 }
 
 __device__ void crossProduct(float* crossP, float* vect_A, float* vect_B) {
+
+    /*
+    Computes the Cross Product of Vectors A and B. Called from device (GPU). 
+
+    Args: 
+        crossP (float*): Pointer to an array of floats, for storing the cross product results
+        vect_A (float*): Pointer to an array of floats, for storing Vector A data
+        vect_B (float*): Pointer to an array of floats, for storing Vector B data
+
+    Returns: 
+        None
+    */
 
     crossP[0] = vect_A[1] * vect_B[2] - vect_A[2] * vect_B[1];
     crossP[1] = vect_A[2] * vect_B[0] - vect_A[0] * vect_B[2];
@@ -459,6 +619,17 @@ __device__ void crossProduct(float* crossP, float* vect_A, float* vect_B) {
 }
 
 __device__ float dotProduct(float* vect_A, float* vect_B) {
+
+    /*
+    Computes the Dot Product of Vectors A and B. Called from device (GPU). 
+    
+    Args: 
+        vect_A (float*): Pointer to an array of floats, for storing Vector A data
+        vect_B (float*): Pointer to an array of floats, for storing Vector B data
+    
+    Returns:
+        product (float): Dot Product result
+    */
 
     float product = 0;
 
@@ -474,6 +645,20 @@ __device__ float dotProduct(float* vect_A, float* vect_B) {
 
 __device__ void rodriguesRotation(float* rot_vect, float* init_vect, float* crossP, float angle, float* fin_vect) {
 
+    /*
+    Rotates the molecule vector by a specified angle about a given axis using the Rodrigues' Rotation Formula. Called from the device (GPU)
+
+    Args: 
+        rot_vect (float*): Pointer to an array of flaots, for storing the vector describing the axis of rotation
+        init_vect (float*): Pointer to an array of floats, for storing the initial molecule vector 
+        crossP (float*): Pointer to an array of floats, for storing the cross product results
+        angle (float): Angle of rotation
+        fin_vect (float*): Pointer to an array of floats, for storing the final molecule vector
+    
+    Returns:
+        None
+    */
+
     float out1[3], out2[3], out3[3];
     // float dotProd;
 
@@ -483,7 +668,6 @@ __device__ void rodriguesRotation(float* rot_vect, float* init_vect, float* cros
     }
 
     // Compute Second Term
-
     crossProduct(crossP, rot_vect, init_vect);
 
     for (int i = 0; i < 3; i++) {
@@ -491,7 +675,6 @@ __device__ void rodriguesRotation(float* rot_vect, float* init_vect, float* cros
     }
 
     // Compute Third Term
-
     for (int i = 0; i < 3; i++) {
         out3[i] = (1 - cos(angle)) * dotProduct(rot_vect, init_vect) * rot_vect[i];
     }
@@ -506,15 +689,35 @@ __device__ void rodriguesRotation(float* rot_vect, float* init_vect, float* cros
 
 __device__ float sample_rayleigh(float rand) {
 
-    /////////////////////////////////////////////////////////////////////////////////
-    ///// This function returns a random value sampled from a Rayleigh distribution
-    ///// with unit width
-    /////////////////////////////////////////////////////////////////////////////////
+    /*
+    Returns a random value sampled from a Rayleigh distribution with unit width. Called from the device (GPU) 
+    
+    Args: 
+        rand (float): Random value sampled from a uniform distribution
+
+    Returns: 
+        float: Random value sampled from a Rayleigh distribution
+    */
 
     return sqrt(-2.0 * logf(rand));
 }
 
  __device__ void translate(float* pos, float *steps, int index, float jump, float a, float b) {
+
+     /*
+     Translates the molecule coordinates by the specified jump size. Called from the device (GPU)
+     
+     Args:
+        pos (float*): Pointer to an array of floats, for storing the coordinates of each simulated molecule
+        steps (float*): Pointer to an array of floats, for storing the xy-step of each simulated molecule
+        index (int): Specifies the index of the molecule is being translated i.e.; which molecule
+        jump (float): Specifies the translational jump size the molecule experiences
+        a (float): An independent value chosen from a uniform distribution on (0, 1) 
+        b (float): An independent value chosen from a uniform distribution on (0, 1)
+
+     Returns:
+        None
+     */
 
      float rand_vect[2];
      float disp_vect[2];
@@ -540,6 +743,25 @@ __device__ float sample_rayleigh(float rand) {
     }
 
  __device__ void rotate(float* ang, float* angsteps, float* totangstep, int index, float angle, float a, float b, float c, float d, float axisAng) {
+
+     /*
+     Rotates the molecule coordinates by the specified angle. Called from the device (GPU)
+
+     Args:
+        ang (float*): Pointer to an array of floats, for storing the angular orientation of each simulated molecule
+        angsteps (float*): Pointer to an array of floats, for storing the angular stepsizes of each simulated molecule
+        totangstep (float*): COMPUTATION IS NOT IMPLEMENTED Pointer to an array of floats, for storing the total angular displacement of each simulated molecule
+        index (int): Specifies the index of the molecule is being rotated i.e.; which molecule
+        angle (float): Specifies the angular jump the molecule experiences
+        a (float): An independent value chosen from a uniform distribution on (0, 1) 
+        b (float): An independent value chosen from a uniform distribution on (0, 1) 
+        c (float): An independent value chosen from a uniform distribution on (0, 1) 
+        d (float): An independent value chosen from a uniform distribution on (0, 1) 
+        axisAng (float): Uniformly distributed angle [0, 2pi] to rotate the arbitrarily determined axis of rotation by
+
+      Returns:
+        None
+     */
 
      float cartDipole[3], normDipole[3];
      float orthVect[3], normOrth[3];
@@ -634,7 +856,43 @@ __device__ float sample_rayleigh(float rand) {
 
  }
 
- __global__ void random_walk(float* pos, float* steps, float* ang, float* angsteps, float* totangstep, float* Drand, float* Dexchrand, float* prevDarr, float* Darr, float* taurand, float* tauexchrand, float* prevtauarr, float* tauarr, float D_sigma, float tau_sigma, float frame, int* Dxch, int* tauxch, float Dxch_sigma, float tauxch_sigma) {
+ __global__ void random_walk(float* pos, float* steps, float* ang, float* angsteps, float* totangstep, float* Drand, float* Dexchrand, float* prevDarr, float* Darr, 
+     float* taurand, float* tauexchrand, float* prevtauarr, float* tauarr, float D_sigma, float tau_sigma, int frame, int* Dxch, int* tauxch, float Dxch_sigma, float tauxch_sigma) {
+
+     /*
+     Performs random walks of both translational and rotational motion for each molecule
+
+     Args:
+         pos (float*): Pointer to an array of floats, for storing the coordinates of each simulated molecule
+         steps (float*): Pointer to an array of floats, for storing the xy-step of each simulated molecule
+         ang (float*): Pointer to an array of floats, for storing the angular orientation of each simulated molecule
+         angsteps (float*): Pointer to an array of floats, for storing the angular stepsizes of each simulated molecule
+         totangstep (float*): COMPUTATION IS NOT IMPLEMENTED Pointer to an array of floats, for storing the total angular displacement of each simulated molecule
+
+         Drand (float*): Pointer to an array of floats, for storing random values sampled from a normal distribution for sampling diffusion coefficients separately for each molecule
+         Dexchrand (float*): Pointer to an array of floats, for storing random values sampled from a normal distribution for sampling diffusion exchange separately for each molecule
+         prevDarr (float*): Pointer to an array of floats, for storing the previous translation diffusion coefficients for each molecule (necessary for correlated exchange)
+         Darr (float*): Pointer to an array of floats, for storing translational diffusion coefficients for each molecule
+
+         taurand (float*): Pointer to an array of floats, for storing random values sampled from a normal distribution for sampling tau separately for each molecule
+         tauexchrand (float*): Pointer to an array of floats, for storing random values sampled from a normal distribution for sampling tau exchange separately for each molecule
+         prevtauarr (float*): Pointer to an array of floats, for storing previous tau for each molecule (necessary for correlated exchange)
+         tauarr (float*): Pointer to an array of floats, for storing tau for each molecule
+
+         D_sigma (float*): Pointer to a float, the variance of the Gaussian distribution diffusion coefficients are sampled from
+         tau_sigma (float*): Pointer to a float, the variance of the Gaussian distribution tau are sampled from
+         
+         frame (int): Frame of the movie that we are saving data frame
+
+         Dxch (int*): Pointer to an array of int, for storing the number of frames before translation exchange in the case your exchange_type = 1 (Exchanges defined in terms of frames and not tau)
+         tauxch (int*): Pointer to an array of int, for storing the number of frames before rotation exchange in the case your exchange_type = 1 (Exchanges defined in terms of frames and not tau)
+
+         Dxch_sigma (float*): Pointer to an array of floats, for storing the variance of the Gaussian distribution diffusion exchange times are sampled from
+         tauxch_sigma (float*): Pointer to an array of floats, for storing the variance of the Gaussian distribution tau exchange times are sampled from
+
+     Returns: 
+        None
+     */
 
      int index = threadIdx.x;
      curandState state;
@@ -771,9 +1029,16 @@ __device__ float sample_rayleigh(float rand) {
 
  __global__ void add_noise(float* lc, float* rc) {
 
-     /////////////////////////////////////////////////////////////////////////////////
-     ///// This function adds a static bkg intensity and random bkg noise to the output .tifs
-     /////////////////////////////////////////////////////////////////////////////////
+     /*
+     Adds a static bkg intensity and random bkg noise to the output .tifs
+
+     Args: 
+        lc (float*): Pointer to an array of floats, for storing per-pixel data for the left-channel
+        rc (float*): Pointer to an array of floats, for storing per-pixel data for the right-channel
+
+    Returns:
+        None
+     */
 
      // I would like to make this a bit more sophisticated in the future though exactly how I am unsure of
 
@@ -802,6 +1067,16 @@ __device__ float sample_rayleigh(float rand) {
  }
 
  int main() {
+
+     /*
+     Main entry point of the program
+
+     Args:
+        None
+
+     Returns: 
+        int: The exit status of the program (0 for success, nonzero for failure)
+     */
 
      // Save Parameters File
 
