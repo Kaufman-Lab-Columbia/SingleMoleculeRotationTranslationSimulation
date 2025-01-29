@@ -65,8 +65,9 @@ The user is able to modify the following parameters by editting their values fro
   nvcc RotationTranslationSimulation.cu -o RotationTranslationSim.exe
   ./RotationTranslationSim.exe
 ```
+NOTE: The compiler will give a number of warnings because file variables are uninitialized during compiling. This is fine and doesn't cause any issues. 
 
-  Once complete, the output frame files will be contained in two folders titled *lc_frames* and *rc_frames* which can be converted to *.tif* files by running the included *SimOut_to_Tif.py* code included in this repository. This may require the user to modify the first snippet of code whereby the path of the *lc_frames* or *rc_frames* folders is specified.
+Once complete, the output frame files will be contained in two folders titled *lc_frames* and *rc_frames* which can be converted to *.tif* files by running the included *SimOut_to_Tif.py* code included in this repository. This may require the user to modify the first snippet of code whereby the path of the *lc_frames* or *rc_frames* folders is specified.
 
   ### Multiple Simulations with Shell Scripts
     
